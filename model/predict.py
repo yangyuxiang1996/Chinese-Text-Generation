@@ -11,7 +11,8 @@ Copyright: 北京贪心科技有限公司版权所有。仅供教学目的使用
 '''
 import random
 import sys
-
+import os
+import pickle
 import torch
 import jieba
 
@@ -28,8 +29,15 @@ class Predict():
     def __init__(self):
         self.DEVICE = config.device
 
-        self.dataset = SamplesDataset(config.train_data_path)
+#         self.dataset = SamplesDataset(config.train_data_path)
 
+#         self.vocab = self.dataset.vocab
+        self.vocab = None
+        if (os.path.exists(config.vocab)):
+            with open(config.vocab, 'rb') as f:
+                self.vocab = pickle.load(f)
+        
+        self.dataset = SamplesDataset(config.train_data_path, vocab=self.vocab)
         self.vocab = self.dataset.vocab
 
         self.model = PGN(self.vocab)
@@ -149,9 +157,9 @@ class Predict():
         # Filter forbidden tokens.
         if len(beam.tokens) == 1:
             forbidden_ids = [
-#                 self.vocab[u"这"],
-#                 self.vocab[u"此"],
-#                 self.vocab[u"采用"],
+                self.vocab[u"这"],
+                self.vocab[u"此"],
+                self.vocab[u"采用"],
                 self.vocab[u"，"],
                 self.vocab[u"。"],
             ]
@@ -307,4 +315,4 @@ if __name__ == "__main__":
     print('greedy: ', greedy_prediction, '\n')
     beam_prediction = pred.predict(picked['x'], picked['OOV'], picked['img_vec'], beam_search=True)
     print('beam: ', beam_prediction, '\n')
-    print('ref: ', picked['y'], '\n')
+    print('ref: ', picked['tgt'], '\n')

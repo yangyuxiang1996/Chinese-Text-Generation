@@ -5,7 +5,7 @@ Description:
 Author: yangyuxiang
 Date: 2021-03-19 00:03:13
 LastEditors: yangyuxiang
-LastEditTime: 2021-04-18 14:22:16
+LastEditTime: 2021-04-17 22:53:31
 FilePath: /Assignment2-3/data/transform_images.py
 '''
 
@@ -28,6 +28,7 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.resnet = models.resnet101(pretrained=False)
         self.resnet.load_state_dict(torch.load("./resnet101-5d3b4d8f.pth"))
+        self.w = nn.Linear(2048, config.img_vec_dim)
 
     def forward(self, x):
         output = self.resnet.conv1(x)
@@ -39,6 +40,8 @@ class Net(nn.Module):
         output = self.resnet.layer3(output)
         output = self.resnet.layer4(output)
         output = self.resnet.avgpool(output)
+        output = self.w(output.permute(0, 3, 2, 1))
+        output = torch.tanh(output)
         return output
 
 
@@ -47,7 +50,9 @@ def extract_vectors(img_path, net, device):
         transforms.Resize(256),
         transforms.CenterCrop(224),
         transforms.ToTensor(),
-        transforms.Lambda(lambda x: x.repeat(1,1,1))
+        transforms.Lambda(lambda x: x.repeat(1,1,1)),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
     ])
     
     img = Image.open(img_path)

@@ -2,3 +2,7 @@
 files/
 saved_model/
 __pycache__/
+runs/*
+*.pth
+out/
+.DS_Store

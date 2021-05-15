@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 '''
 Author: Bingyu Jiang, Peixin Lin
-LastEditors: yangyuxiang
+LastEditors: Peixin Lin
 Date: 2020-07-26 16:13:09
-LastEditTime: 2021-04-18 21:03:59
+LastEditTime: 2021-01-26 00:41:00
 FilePath: /Assignment2-3/model/evaluate.py
 Desciption: Evaluate the loss in the dev set.
 Copyright: 北京贪心科技有限公司版权所有。仅供教学目的使用。
@@ -42,7 +42,8 @@ def evaluate(model, val_data, epoch):
         val_dataloader = DataLoader(dataset=val_data,
                                     batch_size=config.batch_size,
                                     shuffle=True,
-                                    pin_memory=True, drop_last=True,
+                                    pin_memory=True, 
+                                    drop_last=True,
                                     collate_fn=collate_fn)
         for batch, data in enumerate(tqdm(val_dataloader)):
             x, y, x_len, y_len, oov, len_oovs, img_vec = data

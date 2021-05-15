@@ -2,14 +2,15 @@
 # -*- coding: utf-8 -*-
 '''
 Author: Bingyu Jiang, Peixin Lin
-LastEditors: yangyuxiang
+LastEditors: Peixin Lin
 Date: 2020-07-26 16:13:08
-LastEditTime: 2021-04-22 14:32:18
+LastEditTime: 2021-01-26 00:41:30
 FilePath: /Assignment2-3/model/rouge_eval.py
 Desciption: Evaluate the model with ROUGE score.
 Copyright: 北京贪心科技有限公司版权所有。仅供教学目的使用。
 '''
 import sys
+import os
 
 from rouge import Rouge
 

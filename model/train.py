@@ -4,7 +4,7 @@
 Author: Bingyu Jiang, Peixin Lin
 LastEditors: yangyuxiang
 Date: 2020-07-26 16:13:09
-LastEditTime: 2021-05-10 10:21:49
+LastEditTime: 2021-05-09 19:03:37
 FilePath: /Assignment2-3/model/train.py
 Desciption: Train the model.
 Copyright: 北京贪心科技有限公司版权所有。仅供教学目的使用。
@@ -20,8 +20,6 @@ import torch
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
-
-from utils import simple_tokenizer
 
 sys.path.append('..')
 
@@ -66,8 +64,10 @@ def train(dataset, val_dataset, v, start_epoch=0):
     logging.info("initializing optimizer")
 
     # Define the optimizer.
-    optimizer = optim.Adam(model.parameters(),
-                           lr=config.learning_rate)
+#     optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
+    optimizer = optim.Adagrad(model.parameters(),
+                           lr=config.learning_rate, 
+                           initial_accumulator_value=config.initial_accumulator_value)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.2)  # 学习率调整
     train_dataloader = DataLoader(dataset=train_data,
                                   batch_size=config.batch_size,
@@ -76,9 +76,9 @@ def train(dataset, val_dataset, v, start_epoch=0):
 
     val_loss = np.inf
     if (os.path.exists(config.losses_path)):
-        with open(config.losses_path, 'rb') as f:
-            val_losses = float(f.readlines()[-1].split("=")[-1])
-            logging.info("the last best val loss is: " + str(val_losses))
+        with open(config.losses_path, 'r') as f:
+            val_loss = float(f.readlines()[-1].split("=")[-1])
+            logging.info("the last best val loss is: " + str(val_loss))
 
 #     torch.cuda.empty_cache()
     # SummaryWriter: Log writer used for TensorboardX visualization.
@@ -165,7 +165,7 @@ def train(dataset, val_dataset, v, start_epoch=0):
             torch.save(model.reduce_state, config.reduce_state_save_name)
             val_loss = avg_val_loss
             with open(config.losses_path, 'a') as f:
-                f.write(f"best val loss={val_losses}\n")
+                f.write(f"best val loss={val_loss}\n")
         else:
             early_stopping_count += 1
         if early_stopping_count >= config.patience:
@@ -178,8 +178,12 @@ def train(dataset, val_dataset, v, start_epoch=0):
 if __name__ == "__main__":
     # Prepare dataset for training.
     DEVICE = torch.device('cuda') if config.is_cuda else torch.device('cpu')
-    dataset = SamplesDataset(filename=config.train_data_path)
-    val_dataset = SamplesDataset(filename=config.val_data_path, 
-                                vocab=dataset.vocab)
+    
+    vocab=None
+    if (os.path.exists(config.vocab)):
+        with open(config.vocab, 'rb') as f:
+            vocab = pickle.load(f)
+    dataset = SamplesDataset(filename=config.train_data_path, vocab=vocab)
+    val_dataset = SamplesDataset(filename=config.val_data_path, vocab=dataset.vocab)
 
     train(dataset, val_dataset, dataset.vocab, start_epoch=0)

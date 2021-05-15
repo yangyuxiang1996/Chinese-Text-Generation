@@ -4,7 +4,7 @@
 Author: Bingyu Jiang, Peixin Lin
 LastEditors: yangyuxiang
 Date: 2020-07-26 16:13:09
-LastEditTime: 2021-05-09 20:26:56
+LastEditTime: 2021-05-09 19:04:35
 FilePath: /Assignment2-3/model/dataset.py
 Desciption: Define the format of data used in the model.
 Copyright: 北京贪心科技有限公司版权所有。仅供教学目的使用。
@@ -13,7 +13,7 @@ Copyright: 北京贪心科技有限公司版权所有。仅供教学目的使用
 import sys
 from collections import Counter
 from typing import Callable
-
+import pickle
 import torch
 from torch.utils.data import Dataset
 
@@ -37,13 +37,15 @@ class SamplesDataset(Dataset):
                  tokenizer: Callable = simple_tokenizer,
                  vocab=None
                  ):
-        logging.info("Reading dataset %s...\n" % filename)
+        logging.info("Reading dataset %s..." % filename)
         self.filename = filename
         self.tokenizer = tokenizer
         self.img_vecs = self.get_img_vecs(config.img_vecs)
         self.samples = self.build_samples(filename)
         self.vocab = vocab if vocab else self.build_vocab(config.embed_file)
+#         logging.info("index 8: %s" % self.vocab[8])
         self._len = len(self.samples)
+        logging.info("done! dataset: %s" % self._len)
 
     def build_samples(self, filename):
         """Build the samples for the data set.
@@ -62,11 +64,15 @@ class SamplesDataset(Dataset):
             count = 0
             for i, line in enumerate(f):
                 count += 1
-                if count % 1000 == 0:
-                    logging.info(f'processing sample no.{count}.')
+#                 if count % 1000 == 0:
+#                     logging.info(f'processing sample no.{count}.')
                 sample = {}
                 try:
                     source, target, cate, imgid = line.strip().split('\t')
+#                     logging.info("source: %s" % source)
+#                     logging.info("target: %s" % target)
+#                     logging.info("cate: %s" % cate)
+#                     logging.info("imgid: %s" % imgid)
                 except Exception:
                     logging.info('exception happened when processing: ' + line)
                 src = self.tokenizer(source)
@@ -106,15 +112,15 @@ class SamplesDataset(Dataset):
             dict: A sample.
         """
         sample = {}
-        src, tgt, cate, imgid = text.split("\t")
+        source, target, cate, imgid = text.split("\t")
         
-        src = self.tokenizer(src)
+        src = self.tokenizer(source)
         if config.max_src_len and len(src) > config.max_src_len:
             if config.truncate_src:
                 src = src[:config.max_src_len]
         sample['src'] = src
 
-        tgt = self.tokenizer(tgt)
+        tgt = self.tokenizer(target)
         if config.max_tgt_len and len(tgt) > config.max_tgt_len:
             if config.truncate_tgt:
                 tgt = tgt[:config.max_tgt_len]
@@ -134,7 +140,8 @@ class SamplesDataset(Dataset):
         y = abstract2ids(sample['tgt'], self.vocab, oov)
 
         output = {
-            'source': sample['src'],
+            'source': source,
+            'tgt': target, 
             'x': [self.vocab.SOS] + x + [self.vocab.EOS],
             'OOV': oov,
             'len_OOV': len(oov),
@@ -170,6 +177,9 @@ class SamplesDataset(Dataset):
         if embed_file is not None:
             count = vocab.load_embeddings(embed_file)
             logging.info("%d pre-trained embeddings loaded." % count)
+            
+        with open(config.vocab, "wb") as f:
+            pickle.dump(vocab, f)
 
         return vocab
 
