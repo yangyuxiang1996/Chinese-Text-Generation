@@ -1,12 +1,13 @@
 #!/usr/bin/env python
-# coding=utf-8
+# -*- coding: utf-8 -*-
 '''
-Description: 
-Author: yangyuxiang
-Date: 2021-03-19 00:03:13
+Author: Bingyu Jiang, Peixin Lin
 LastEditors: yangyuxiang
-LastEditTime: 2021-05-07 11:12:11
+Date: 2020-07-26 16:13:08
+LastEditTime: 2021-05-09 18:33:35
 FilePath: /Assignment2-3/model/predict.py
+Desciption: Generate a summary.
+Copyright: 北京贪心科技有限公司版权所有。仅供教学目的使用。
 '''
 import random
 import sys
@@ -148,9 +149,9 @@ class Predict():
         # Filter forbidden tokens.
         if len(beam.tokens) == 1:
             forbidden_ids = [
-                self.vocab[u"这"],
-                self.vocab[u"此"],
-                self.vocab[u"采用"],
+#                 self.vocab[u"这"],
+#                 self.vocab[u"此"],
+#                 self.vocab[u"采用"],
                 self.vocab[u"，"],
                 self.vocab[u"。"],
             ]
@@ -271,9 +272,7 @@ class Predict():
         x = torch.tensor(x).to(self.DEVICE)
         len_oovs = torch.tensor([len(oov)]).to(self.DEVICE)
         x_padding_masks = torch.ne(x, 0).byte().float()
-        img_vec = torch.tensor(img_vec).unsqueeze(0).to(self.DEVICE)
-#         print(x.shape)
-#         print(img_vec.shape)
+        img_vec = torch.tensor(img_vec).unsqueeze(0)
         if beam_search:
             summary = self.beam_search(x.unsqueeze(0),
                                        max_sum_len=config.max_dec_steps,
@@ -304,8 +303,8 @@ if __name__ == "__main__":
         print('source: ', picked, '\n')
         picked = pred.dataset.get_sample(picked)
 
-    greedy_prediction = pred.predict(x=picked['src'], img_vec=picked['img_vec'], beam_search=False)
+    greedy_prediction = pred.predict(picked['x'], picked['OOV'], picked['img_vec'], beam_search=False)
     print('greedy: ', greedy_prediction, '\n')
-    beam_prediction = pred.predict(x=picked['src'], img_vec=picked['img_vec'], beam_search=True)
+    beam_prediction = pred.predict(picked['x'], picked['OOV'], picked['img_vec'], beam_search=True)
     print('beam: ', beam_prediction, '\n')
-    print('ref: ', picked['tgt'], '\n')
+    print('ref: ', picked['y'], '\n')

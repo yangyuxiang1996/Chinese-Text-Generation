@@ -4,7 +4,7 @@
 Author: Bingyu Jiang, Peixin Lin
 LastEditors: yangyuxiang
 Date: 2020-07-26 16:13:08
-LastEditTime: 2021-05-07 10:52:09
+LastEditTime: 2021-05-09 19:05:11
 FilePath: /Assignment2-3/model/model.py
 Desciption: Define the model.
 Copyright: 北京贪心科技有限公司版权所有。仅供教学目的使用。
@@ -21,6 +21,11 @@ sys.path.append('.')
 sys.path.append('..')
 import config
 from utils import timer, replace_oovs
+import logging
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(filename)s %(levelname)s %(message)s',
+                    datefmt='%a %d %b %Y %H:%M:%S'
+                    )
 
 
 class Encoder(nn.Module):
@@ -231,8 +236,9 @@ class ReduceState(nn.Module):
     """
     def __init__(self):
         super(ReduceState, self).__init__()
-        self.init_decoder_cell1 = nn.Linear(config.hidden_size + config.img_vec_dim, config.hidden_size, bias=True)
-        self.init_decoder_cell2 = nn.Linear(config.hidden_size + config.img_vec_dim, config.hidden_size, bias=True)
+        self.init_decoder_cell = nn.Linear(config.hidden_size * 2 + config.img_vec_dim, config.hidden_size, bias=True)
+        # self.init_decoder_cell1 = nn.Linear(config.hidden_size + config.img_vec_dim, config.hidden_size, bias=True)
+        # self.init_decoder_cell2 = nn.Linear(config.hidden_size + config.img_vec_dim, config.hidden_size, bias=True)
 
     def forward(self, hidden, img_vec=None):
         """The forward propagation of reduce state module.
@@ -298,14 +304,14 @@ class PGN(nn.Module):
     def load_model(self):
 
         if (os.path.exists(config.encoder_save_name)):
-            print('Loading model: ', config.encoder_save_name)
+            logging.info('Loading model: ' + config.encoder_save_name)
             self.encoder = torch.load(config.encoder_save_name)
             self.decoder = torch.load(config.decoder_save_name)
             self.attention = torch.load(config.attention_save_name)
             self.reduce_state = torch.load(config.reduce_state_save_name)
 
         elif config.fine_tune:
-            print('Loading model: ', f'../saved_model/{config.model_for_ft}/encoder.pt')
+            logging.info('Loading model: ' + f'../saved_model/{config.model_for_ft}/encoder.pt')
             self.encoder = torch.load(f'../saved_model/{config.model_for_ft}/encoder.pt')
             self.decoder = torch.load(f'../saved_model/{config.model_for_ft}/decoder.pt')
             self.attention = torch.load(f'../saved_model/{config.model_for_ft}/attention.pt')

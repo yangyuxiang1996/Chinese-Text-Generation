@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 '''
 Author: Bingyu Jiang, Peixin Lin
-LastEditors: Peixin Lin
+LastEditors: yangyuxiang
 Date: 2020-07-26 16:13:09
-LastEditTime: 2021-01-26 00:41:50
+LastEditTime: 2021-05-10 14:34:58
 FilePath: /Assignment2-3/model/utils.py
 Desciption: Helper functions or classes used for the model.
 Copyright: 北京贪心科技有限公司版权所有。仅供教学目的使用。
@@ -172,12 +172,15 @@ def abstract2ids(abstract_words, vocab, source_oovs):
     for w in abstract_words:
         i = vocab[w]
         if i == unk_id:  # If w is an OOV word
-            if w in source_oovs:  # If w is an in-source OOV
-                # Map to its temporary source OOV number
-                vocab_idx = vocab.size() + source_oovs.index(w)
-                ids.append(vocab_idx)
-            else:  # If w is an out-of-source OOV
-                ids.append(unk_id)  # Map to the UNK token id
+            if config.pointer:
+                if w in source_oovs:  # If w is an in-source OOV
+                    # Map to its temporary source OOV number
+                    vocab_idx = vocab.size() + source_oovs.index(w)
+                    ids.append(vocab_idx)
+                else:  # If w is an out-of-source OOV
+                    ids.append(unk_id)  # Map to the UNK token id
+            else:
+                ids.append(unk_id)
         else:
             ids.append(i)
     return ids

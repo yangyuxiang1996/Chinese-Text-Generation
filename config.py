@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 '''
 Author: Bingyu Jiang, Peixin Lin
-LastEditors: Peixin Lin
+LastEditors: yangyuxiang
 Date: 2020-07-26 16:13:08
-LastEditTime: 2020-08-06 21:09:10
-FilePath: /JD_project_2/model/config.py
+LastEditTime: 2021-05-09 18:05:58
+FilePath: /Assignment2-3/config.py
 Desciption: Define configuration parameters.
 Copyright: 北京贪心科技有限公司版权所有。仅供教学目的使用。
 '''
@@ -38,7 +38,7 @@ dec_attn: bool = True
 dec_in_dropout = 0
 dec_rnn_dropout = 0
 dec_out_dropout = 0
-data_folder = os.path.join(root_path, '../dataset/京东智能营销文本/8a5a71a4-4d1f-4d67-b1f3-ea893e99488d/file')
+data_folder = os.path.join(root_path, 'files/8a5a71a4-4d1f-4d67-b1f3-ea893e99488d/file')
 img_vecs = os.path.join(root_path, 'files/img_vecs.txt')
 sample_path = os.path.join(root_path, 'files/samples.txt')
 
@@ -56,9 +56,9 @@ batch_size = 8
 pointer = True
 coverage = False
 fine_tune = False
-img_feat = True
+img_feat = False
 max_grad_norm = 2.0
-is_cuda = True
+is_cuda = False
 DEVICE = torch.device("cuda" if is_cuda else "cpu")
 LAMBDA = 1
 patience = 2

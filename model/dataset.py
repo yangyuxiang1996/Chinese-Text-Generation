@@ -4,7 +4,7 @@
 Author: Bingyu Jiang, Peixin Lin
 LastEditors: yangyuxiang
 Date: 2020-07-26 16:13:09
-LastEditTime: 2021-04-22 14:31:50
+LastEditTime: 2021-05-09 20:26:56
 FilePath: /Assignment2-3/model/dataset.py
 Desciption: Define the format of data used in the model.
 Copyright: 北京贪心科技有限公司版权所有。仅供教学目的使用。
@@ -21,6 +21,11 @@ sys.path.append('..')
 from utils import simple_tokenizer, count_words, sort_batch_by_len, source2ids, abstract2ids
 from vocab import Vocab
 import config
+import logging
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(filename)s %(levelname)s %(message)s',
+                    datefmt='%a %d %b %Y %H:%M:%S'
+                    )
 
 
 class SamplesDataset(Dataset):
@@ -32,7 +37,7 @@ class SamplesDataset(Dataset):
                  tokenizer: Callable = simple_tokenizer,
                  vocab=None
                  ):
-        print("Reading dataset %s...\n" % filename, end=' ', flush=True)
+        logging.info("Reading dataset %s...\n" % filename)
         self.filename = filename
         self.tokenizer = tokenizer
         self.img_vecs = self.get_img_vecs(config.img_vecs)
@@ -50,10 +55,43 @@ class SamplesDataset(Dataset):
         Returns:
             samples (list(dict)): All samples each represented as a dictionary.
         """
-        samples = []
-        with open(filename, 'r') as f:
-            for line in f.readlines():
-                samples.append(self.get_sample(line))
+        with open(filename, 'rt', encoding='utf-8') as f:
+            next(f)
+
+            samples = []
+            count = 0
+            for i, line in enumerate(f):
+                count += 1
+                if count % 1000 == 0:
+                    logging.info(f'processing sample no.{count}.')
+                sample = {}
+                try:
+                    source, target, cate, imgid = line.strip().split('\t')
+                except Exception:
+                    logging.info('exception happened when processing: ' + line)
+                src = self.tokenizer(source)
+                if config.max_src_len and len(src) > config.max_src_len:
+                    if config.truncate_src:
+                        src = src[:config.max_src_len]
+                    else:
+                        continue
+                sample['src'] = src
+
+                tgt = self.tokenizer(target)
+                if config.max_tgt_len and len(tgt) > config.max_tgt_len:
+                    if config.truncate_tgt:
+                        tgt = tgt[:config.max_tgt_len]
+                    else:
+                        continue
+                sample['tgt'] = tgt
+
+                img_vec = ' '.join(['0']*1000)
+                if imgid != 'none':
+                    img_vec = self.img_vecs[imgid+'.jpg']
+                sample['img_vec'] = img_vec
+
+                sample['cate'] = cate
+                samples.append(sample)
 
         return samples
 
@@ -69,17 +107,44 @@ class SamplesDataset(Dataset):
         """
         sample = {}
         src, tgt, cate, imgid = text.split("\t")
-        try:
-            img_vec = self.img_vecs[imgid]
-        except Exception as e:
-            img_vec = self.img_vecs[imgid.strip()+'.jpg']
         
+        src = self.tokenizer(src)
+        if config.max_src_len and len(src) > config.max_src_len:
+            if config.truncate_src:
+                src = src[:config.max_src_len]
         sample['src'] = src
+
+        tgt = self.tokenizer(tgt)
+        if config.max_tgt_len and len(tgt) > config.max_tgt_len:
+            if config.truncate_tgt:
+                tgt = tgt[:config.max_tgt_len]
         sample['tgt'] = tgt
+
+        img_vec = ' '.join(['0'] * config.img_vec_dim)
+        if img_vec != '':
+            try:
+                img_vec = self.img_vecs[imgid]
+            except Exception as e:
+                img_vec = self.img_vecs[imgid.strip()+'.jpg']
+        sample['img_vec'] = img_vec
+
         sample['cate'] = cate
-        sample["img_vec"] = img_vec
+
+        x, oov = source2ids(src, self.vocab)
+        y = abstract2ids(sample['tgt'], self.vocab, oov)
+
+        output = {
+            'source': sample['src'],
+            'x': [self.vocab.SOS] + x + [self.vocab.EOS],
+            'OOV': oov,
+            'len_OOV': len(oov),
+            'y': [self.vocab.SOS] + y + [self.vocab.EOS],
+            'x_len': len(sample['src'])+2,
+            'y_len': len(sample['tgt'])+2,
+            'img_vec': sample['img_vec']
+        }
         
-        return sample
+        return output
 
     def build_vocab(self, embed_file: str = None) -> Vocab:
         """Build the vocabulary for the data set.
@@ -104,7 +169,7 @@ class SamplesDataset(Dataset):
             vocab.add_words([word])
         if embed_file is not None:
             count = vocab.load_embeddings(embed_file)
-            print("%d pre-trained embeddings loaded." % count)
+            logging.info("%d pre-trained embeddings loaded." % count)
 
         return vocab
 
